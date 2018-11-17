@@ -1,0 +1,300 @@
+/**
+ *Stephen Hamilton
+ *Class: CMSC 330
+ *Section: 7981
+ *Instructor: Timmothy Boyd
+ *Assignment: Project 1 Recursive Descent Parser
+ * Purpose: The purpose of this program is to write a program that 
+ * parses, using recursive descent, a GUI definition 
+ * language defined in an input file and generates the GUI that it defines. 
+ * Date Started: 11/12/2018
+ * Due Date: 11/19/2018
+ */
+package magicgui;
+
+/**
+ *
+ * @author Stephen Hamilton
+ */
+import java.awt.FlowLayout;
+import java.awt.GridLayout;
+import java.awt.LayoutManager;
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
+import java.util.ArrayList;
+import javax.swing.JButton;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.JTextField;
+
+public class MagicGUI {
+    //int data type integer index for index values
+    private int index;
+    //variable input declared for String Array
+    private String[] input;
+    //variable CalculatorGUIWindow for JFrame creation
+    JFrame CalculatorGUIWindow = null;
+
+    public MagicGUI() {
+        initialize();
+
+    }
+    //main method
+    public static void main(String[] args) {
+        //Creating GUI object
+        MagicGUI GUI = new MagicGUI();
+    }
+    //getProperGrammar method
+    private String getProperGrammar() throws IOException {
+
+        //The BufferReader reads the file input from the user
+        BufferedReader read = new BufferedReader(new FileReader("C:\\Calculator.txt"));
+        
+        String text = null;
+        //Object variable buildAString for StringBuilder Class
+        StringBuilder buildAString = new StringBuilder();
+        //Returns a string containing the value of the property
+        String separate = System.getProperty("line.separator");
+        //While Loop for stringBuilder and readLine method
+        while ((text = read.readLine()) != null) {
+            //append the string to read
+            buildAString.append(text);
+            //append the string to be separated
+            buildAString.append(separate);
+        }
+        //return object to string via toString method
+        return buildAString.toString();
+
+    }//end
+    //initialize method
+    private void initialize() {
+        //Try / Catch
+        try {
+            //Creation of variable langGrammer for getProperGrammar Method
+            String langGrammar = getProperGrammar();
+            //Variable input = langGrammar.split to split strings into sub strings
+            input = langGrammar.split("\\n");
+            //ArrayList listOfToken input starts at 0
+            ArrayList<String> listOfTokens = getTokens(input[0]);
+            //element = listOfTokens ---> get 0 for input
+            String element = listOfTokens.get(0);
+            //If statement to compare strings
+            //  .equalsIgnoreCase method compares two strings irrespective of the case
+            if (element.equalsIgnoreCase("Window")) {
+                try {
+                    ///banner variable = listOfTokens ---> get 1
+                    String banner = listOfTokens.get(1).replace("\"", "");
+                    //int data type variable windowWidth used for parsing the integers
+                    int windowWidth = Integer.parseInt(listOfTokens.get(2).substring(1, listOfTokens.get(2).length() - 1));
+                    //int data type variable windowHeight used for parsing the integers
+                    int windowHeight = Integer.parseInt(listOfTokens.get(3).substring(0, listOfTokens.get(3).length() - 1));
+                    //interface instance for classes to layout cotainers
+                    LayoutManager guiLay = null;
+                    //if statement argument for size of tokens > 4
+                    if (listOfTokens.size() > 4) {
+
+                        // if statement For "Layout" .equalsIgnoreCase method compares two strings irrespective of the case
+                        if (listOfTokens.get(4).equalsIgnoreCase("Layout")) {
+                            //guiLay variable / listOfTokens is 5
+                            guiLay = getLayout(listOfTokens.subList(5, listOfTokens.size()));
+                            //else statement for exception to throw error if above is not true.
+                        } else {
+                            throw new Exception("ERROR!");
+                        }
+
+                    }//end
+                    //guiWindow method = to CalculatorGUIWindow variable for the window paramenters
+                    CalculatorGUIWindow= (guiWindow(banner, windowWidth, windowHeight , guiLay));
+                    //Print the banner, with the variables windowWidth and windowHeight
+                    System.out.println(banner + ", " + windowWidth + ", " + windowHeight );
+                    //catch and throw exception for syntax error
+                } catch (Exception e) {
+                    //Throw the error!
+                    throw new Exception("ERROR!");
+                }
+
+                //else if none of the above is true
+            } else {
+                //throw the exception
+                throw new Exception("Can't Create GUI");
+            }
+
+            
+            //For loop for the widgets
+            for (index = 1; index < input.length; index++) {
+                listOfTokens.clear();
+                listOfTokens = getTokens(input[index]);
+                //if statement .equalsIgnoreCase method compares two strings irrespective of the case
+                //compare strings for buttton
+                if (listOfTokens.get(0).equalsIgnoreCase("Button")) {
+                    CalculatorGUIWindow.add(new JButton(getComponetLabel(listOfTokens.get(1))));
+                    //else if statement .equalsIgnoreCase method compares two strings irrespective of the case
+                    //compare strings for label
+                } else if (listOfTokens.get(0).equalsIgnoreCase("Label")) {
+                    CalculatorGUIWindow.add(new JLabel(getComponetLabel(listOfTokens.get(1))));
+                     //else if statement .equalsIgnoreCase method compares two strings irrespective of the case
+                     //compare strings for panel
+                } else if (listOfTokens.get(0).equalsIgnoreCase("Panel")) {
+                     //getter for panel
+                   CalculatorGUIWindow.add(getPanel());
+                     //else if statement .equalsIgnoreCase method compares two strings irrespective of the case
+                } else if (listOfTokens.get(0).equalsIgnoreCase("Textfield")) {
+                    String token = listOfTokens.get(1);
+                    token = token.substring(0, token.length() - 1);
+                    //parse integers for textField
+                   CalculatorGUIWindow.add(new JTextField(Integer.parseInt(token)));
+                }
+                //relayout for GUI
+                CalculatorGUIWindow.validate();
+            }
+
+        } catch (Exception e) {
+        }
+
+    }
+    //getPanel Method
+    private JPanel getPanel() throws Exception {
+        //panel variable to create object panel
+        JPanel panel = new JPanel();
+        //ArrayList for String ---> getTokens mehtod for input
+        ArrayList<String> tokensList = getTokens(input[index]);
+        //if statement .equalsIgnoreCase method compares two strings irrespective of the case
+        if (tokensList.get(1).equalsIgnoreCase("Layout")) {
+            panel.setLayout(getLayout(tokensList.subList(2, tokensList.size())));
+            //setLayout for panel grid layout specifications
+            panel.setLayout(new GridLayout(4,3,5,5));
+            //else throw the exception if invalid
+        } else {
+            throw new Exception(" invalid " + index);
+        }
+        //For loop count index + 1 ...
+        for (index = index + 1; index < input.length; index++) {
+            //removes all elements in list
+            tokensList.clear();
+            //getTokens method for input index
+            tokensList = getTokens(input[index]);
+            //if statement .equalsIgnoreCase method compares two strings irrespective of the case
+            //if the token is button
+            if (tokensList.get(0).equalsIgnoreCase("Button")) 
+            {
+                //add the button
+                panel.add(new JButton(getComponetLabel(tokensList.get(1)))); 
+                //else if statement  .equalsIgnoreCase method compares two strings irrespective of the case
+                //add layout label
+            } else if (tokensList.get(0).equalsIgnoreCase("Label")) 
+            {
+                //add the label to panel
+                panel.add(new JLabel(getComponetLabel(tokensList.get(1))));
+                //else if statement .equalsIgnoreCase method compares two strings irrespective of the case
+                // add the text field 
+            } else if (tokensList.get(0).equalsIgnoreCase("Textfield"))  
+            {
+                //add text field to panel, getter to get from list
+                String token = tokensList.get(1);
+                //looking at token length
+                token = token.substring(0, token.length() - 1);
+                //pares token to add
+                panel.add(new JTextField(Integer.parseInt(token)));
+                //else if statement .equalsIgnoreCase method compares two strings irrespective of the case
+            } else if (tokensList.get(0).equalsIgnoreCase("Panel")) {
+                //getter to get the panel and .add to add panel
+                panel.add(getPanel());
+                //else if statement .equalsIgnoreCase method compares two strings irrespective of the case
+            } else if (tokensList.get(0).equalsIgnoreCase("End;")) // finish creating panel 
+            {
+                //return the panel created
+                return panel;
+            }
+
+        }
+         //throw exception 
+        throw new Exception("Not foundd");
+    }
+    //getComponentLabel method for String Token
+    private String getComponetLabel(String token) {
+        //if statement for token length greater than 3
+        if (token.length() > 3) {
+            //return the token - 2
+            return token.substring(1, token.length() - 2);
+            //else statement
+        } else {
+            //return the token
+            return "";
+        }
+    }
+
+   //interface for classes to layout cotainers "Flow Layout"
+    private LayoutManager getLayout(java.util.List<String> layoutTokensList) throws Exception {
+        //if statemnet for flow layout
+        if (layoutTokensList.get(0).contains("Flow:")) {
+            //retun the flow layout
+            return new FlowLayout();
+            //else if statement for the grid
+        } else if (layoutTokensList.get(0).contains("Grid")) {
+            //int data type intParam1 for grid layout parsing / length / getting token values
+            int intParam1 = Integer.parseInt(layoutTokensList.get(0).substring("Grid(".length(), layoutTokensList.get(0).length() - 1));
+             //int data type intParam2 for grid layout parsing / length / getting token values
+            int intParam2 = Integer.parseInt(layoutTokensList.get(1).substring(0, layoutTokensList.get(1).length() - 1));
+             //int data type intParam3 for grid layout parsing / length / getting token values
+            int intParam3 = Integer.parseInt(layoutTokensList.get(2).substring(0, layoutTokensList.get(2).length() - 1));
+             //int data type intParam4 for grid layout parsing / length / getting token values
+            int intParam4 = Integer.parseInt(layoutTokensList.get(3).substring(0, layoutTokensList.get(3).length() - 2));
+            //print out parsed tokens form list
+            System.out.println(intParam1 + ", " + intParam2 + ", " + intParam3 + ", " + intParam4 );
+            //return the grid layout parameters
+            return new GridLayout(intParam1, intParam2, intParam3, intParam4);
+            //else if something is not a valid syntax
+        } else {
+            //throw the exception
+            throw new Exception("Invalid");
+        }
+    }
+//interface for classes to layout cotainers
+    ///guiWindow method for the banner, the width, the height, the layout
+    private JFrame guiWindow(String banner, int width, int height, LayoutManager layout) {
+        //banner object frame created for JFrame
+        JFrame frame = new JFrame(banner);
+        //if statement is not equal to null
+        if (layout != null) {
+            //then set the layout
+            frame.setLayout(layout);
+        }
+        //setter for size of width , height
+        frame.setSize(width, height);
+        //setter for close operation to close the window and stop the program when user clicks close
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        //setter for setting frame to be visible "true"
+        frame.setVisible(true);
+        //return the frame object
+        return frame;
+
+    }
+    //getTokens method for ArrayList
+    private ArrayList<String> getTokens(String grammar) {
+        //List of tokens as a string for gui grammar
+        //.trim() eliminates leading and trailing spaces
+        //.split() split strings into substrings
+        String[] tokens = grammar.trim().split(" ");
+        ///ArrayList tokensLIst
+        ArrayList<String> tokensList = new ArrayList<>();
+        //For Loop tokens
+        for (String token1 : tokens) {
+            //trim token1 .trim() eliminates leading and trailing spaces
+            String token = token1.trim();
+            //if Statement token equals " " OR token equals ""
+            if (token.equals(" ") || token.equals("")) {
+                //continue causes loop to jump to next iteration of loop
+                continue;
+            }
+            //add the token to the list
+            tokensList.add(token);
+            //print the token
+            System.out.println(token);
+        }
+        
+        //retunr the list
+        return tokensList;
+    }
+}
